@@ -128,7 +128,8 @@ export async function listProviderApis(slug: string): Promise<ApiSummary[]> {
 }
 
 export async function getApiDetail(aid: string): Promise<ApiDetail> {
-  const j = await getJson(`${APIS_IO}/apis/${encodeURIComponent(aid)}?include=content`);
+  // aid is provider-slug:api-slug — keep the colon raw; the API 403s on %3A.
+  const j = await getJson(`${APIS_IO}/apis/${aid}?include=content`);
   return j as ApiDetail;
 }
 
