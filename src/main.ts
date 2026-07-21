@@ -575,35 +575,38 @@ function closeDetail() {
 
 // ---------- Download / Upload ----------
 
+async function buildPlatformYaml(): Promise<string> {
+  syncPlatformMeta();
+  const mergedByMember = new Map<string, any>();
+  for (const m of state.members) {
+    if (!m.ops.length) continue;
+    // Ensure every source spec is parsed & cached.
+    const specs = new Map<string, any>();
+    const bySpec = new Map<string, SelectedOp[]>();
+    for (const o of m.ops) {
+      if (!bySpec.has(o.specUrl)) bySpec.set(o.specUrl, []);
+      bySpec.get(o.specUrl)!.push(o);
+    }
+    for (const specUrl of bySpec.keys()) {
+      try {
+        const prop: ApiProperty = specUrl.startsWith('inline:') ? await inlineSpecProp(specUrl) : { type: 'OpenAPI', url: specUrl };
+        specs.set(specUrl, await loadSpec(prop));
+      } catch {
+        /* skip unresolved spec */
+      }
+    }
+    mergedByMember.set(m.slug, buildMergedOpenApi(m.name, m.ops, specs));
+  }
+  return toYaml(buildApisJson(state, mergedByMember));
+}
+
 async function download() {
   const btn = $<HTMLButtonElement>('#download-btn');
   const label = btn.textContent;
   btn.disabled = true;
   btn.textContent = 'Building…';
   try {
-    syncPlatformMeta();
-    const mergedByMember = new Map<string, any>();
-    for (const m of state.members) {
-      if (!m.ops.length) continue;
-      // Ensure every source spec is parsed & cached.
-      const specs = new Map<string, any>();
-      const bySpec = new Map<string, SelectedOp[]>();
-      for (const o of m.ops) {
-        if (!bySpec.has(o.specUrl)) bySpec.set(o.specUrl, []);
-        bySpec.get(o.specUrl)!.push(o);
-      }
-      for (const specUrl of bySpec.keys()) {
-        try {
-          const prop: ApiProperty = specUrl.startsWith('inline:') ? await inlineSpecProp(specUrl) : { type: 'OpenAPI', url: specUrl };
-          specs.set(specUrl, await loadSpec(prop));
-        } catch {
-          /* skip unresolved spec */
-        }
-      }
-      mergedByMember.set(m.slug, buildMergedOpenApi(m.name, m.ops, specs));
-    }
-    const doc = buildApisJson(state, mergedByMember);
-    const yaml = toYaml(doc);
+    const yaml = await buildPlatformYaml();
     const blob = new Blob([yaml], { type: 'text/yaml' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -611,6 +614,22 @@ async function download() {
     a.click();
     URL.revokeObjectURL(a.href);
     toast('Downloaded platform definition');
+  } catch (e: any) {
+    toast(`Build failed: ${e.message}`);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = label;
+  }
+}
+
+async function viewYaml() {
+  const btn = $<HTMLButtonElement>('#view-btn');
+  const label = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Building…';
+  try {
+    $('#yaml-body').textContent = await buildPlatformYaml();
+    $('#yaml-back').hidden = false;
   } catch (e: any) {
     toast(`Build failed: ${e.message}`);
   } finally {
@@ -732,6 +751,23 @@ function init() {
   $('#plat-desc').addEventListener('input', syncPlatformMeta);
   $('#add-group').addEventListener('click', addGroup);
   $('#download-btn').addEventListener('click', download);
+  $('#view-btn').addEventListener('click', viewYaml);
+  $('#yaml-x').addEventListener('click', () => ($('#yaml-back').hidden = true));
+  $('#yaml-back').addEventListener('click', (e) => {
+    if (e.target === $('#yaml-back')) $('#yaml-back').hidden = true;
+  });
+  $('#yaml-copy').addEventListener('click', async () => {
+    await navigator.clipboard.writeText($('#yaml-body').textContent || '');
+    toast('Copied apis.yml to clipboard');
+  });
+  $('#yaml-download').addEventListener('click', () => {
+    const blob = new Blob([$('#yaml-body').textContent || ''], { type: 'text/yaml' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `${slugify(state.name || 'platform')}-apis.yml`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
   $('#upload-btn').addEventListener('click', () => ($('#upload-file') as HTMLInputElement).click());
   $('#upload-file').addEventListener('change', (e) => {
     const f = (e.target as HTMLInputElement).files?.[0];
@@ -762,7 +798,8 @@ function init() {
 
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
-      if (!$('#detail-back').hidden) closeDetail();
+      if (!$('#yaml-back').hidden) $('#yaml-back').hidden = true;
+      else if (!$('#detail-back').hidden) closeDetail();
       else if (!$('#about-back').hidden) $('#about-back').hidden = true;
     }
   });

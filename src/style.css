@@ -105,6 +105,13 @@ button{font:inherit;cursor:pointer}
 .modal-x{position:absolute;top:.6rem;right:.8rem;background:transparent;border:0;color:var(--muted);font-size:1.5rem;line-height:1}
 .modal-x:hover{color:var(--fg)}
 
+/* apis.yml preview */
+.yaml-modal{max-width:860px;width:94%;display:flex;flex-direction:column;max-height:86vh}
+.yaml-head{display:flex;align-items:center;gap:.8rem;margin-bottom:.6rem}
+.yaml-head h2{margin:0;font-size:1.05rem;font-family:"SF Mono",Menlo,Consolas,monospace}
+.yaml-actions{display:flex;gap:.4rem;margin-right:1.6rem}
+.yaml-body{flex:1;min-height:0;overflow:auto;background:#161616;border:1px solid var(--line);border-radius:8px;padding:.7rem .9rem;margin:0;font-family:"SF Mono",Menlo,Consolas,monospace;font-size:.76rem;line-height:1.45;white-space:pre;color:#cdd}
+
 /* detail drawer */
 .drawer-back{justify-content:flex-end}
 .detail{background:var(--panel);border-left:1px solid var(--line);width:min(940px,94%);display:flex;flex-direction:column;height:100%}

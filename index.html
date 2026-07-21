@@ -32,6 +32,7 @@
       <span class="tb-sep"></span>
       <button class="ghost-btn" id="add-group" type="button" title="Add a new grouping">+ Group</button>
       <button class="ghost-btn" id="upload-btn" type="button" title="Upload an apis.yml to continue editing">Upload apis.yml</button>
+      <button class="ghost-btn" id="view-btn" type="button" title="Preview the platform definition">View apis.yml</button>
       <button class="measure-btn" id="download-btn" type="button" title="Download the platform definition">Download apis.yml</button>
       <input type="file" id="upload-file" accept=".yml,.yaml,.json" hidden />
       <span class="counts" id="counts"></span>
@@ -95,6 +96,21 @@
             </section>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- apis.yml preview popover -->
+    <div class="modal-back" id="yaml-back" hidden>
+      <div class="modal yaml-modal">
+        <button class="modal-x" id="yaml-x" type="button" aria-label="Close">×</button>
+        <div class="yaml-head">
+          <h2>apis.yml</h2>
+          <div class="yaml-actions">
+            <button class="mini-btn" id="yaml-copy" type="button" title="Copy to clipboard">Copy</button>
+            <button class="mini-btn" id="yaml-download" type="button" title="Download this file">Download</button>
+          </div>
+        </div>
+        <pre id="yaml-body" class="yaml-body"></pre>
       </div>
     </div>
 
