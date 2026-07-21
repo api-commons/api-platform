@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <rect width="32" height="32" rx="6" fill="#1e1e1e"/>
+  <!-- stacked platform layers -->
+  <rect x="6" y="19" width="20" height="4" rx="1.4" fill="#3794ff"/>
+  <rect x="8.5" y="13.5" width="15" height="4" rx="1.4" fill="#4aa3ff" opacity=".8"/>
+  <rect x="11" y="8" width="10" height="4" rx="1.4" fill="#ffc107"/>
+</svg>

@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>API Platform — define your company's API stack as an APIs.json</title>
+    <meta name="description" content="Build your company's platform definition as an APIs.json (YAML, type: platform). Browse every provider on APIs.io, drag them into groups, pick the exact operations and properties you use across each API, and export a single platform definition — a merged OpenAPI per provider plus the properties agents need — to give AI complete context for the API stack your organization runs on." />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-WNSPT4B4S8"></script>
+    <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-WNSPT4B4S8');</script>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand"><strong>API Platform</strong><span class="tag">platform.apicommons.org</span></div>
+      <nav>
+        <a href="#" id="nav-about" title="What this does">About</a>
+        <a href="https://apis.io" target="_blank" rel="noopener">APIs.io</a>
+        <a href="https://apicommons.org" target="_blank" rel="noopener">API Commons</a>
+        <a href="https://github.com/api-commons/api-platform" target="_blank" rel="noopener">GitHub</a>
+        <button id="engage-ae" class="engage-btn" type="button" title="Work with API Evangelist on your platform definition">Get help</button>
+      </nav>
+    </header>
+
+    <!-- Laneworks ad network (ads.laneworks.net) -->
+    <script async src="https://ads.laneworks.net/embed.js"></script>
+    <div data-laneworks-ad="top-banner"></div>
+
+    <div class="toolbar">
+      <span class="tb-label">Platform</span>
+      <input type="text" id="plat-name" placeholder="My Company Platform" title="Platform name" />
+      <input type="text" id="plat-desc" placeholder="One line describing this platform…" title="Platform description" />
+      <span class="tb-sep"></span>
+      <button class="ghost-btn" id="add-group" type="button" title="Add a new grouping">+ Group</button>
+      <button class="ghost-btn" id="upload-btn" type="button" title="Upload an apis.yml to continue editing">Upload apis.yml</button>
+      <button class="measure-btn" id="download-btn" type="button" title="Download the platform definition">Download apis.yml</button>
+      <input type="file" id="upload-file" accept=".yml,.yaml,.json" hidden />
+      <span class="counts" id="counts"></span>
+    </div>
+
+    <div class="split">
+      <!-- LEFT: provider palette -->
+      <aside class="pane left" id="palette">
+        <h3>Providers <span class="muted small" id="palette-total"></span></h3>
+        <input type="search" id="prov-search" placeholder="Search 8,900+ providers on APIs.io…" autocomplete="off" />
+        <div class="grouping-chips" id="grouping-chips"></div>
+        <div id="palette-list" class="palette-list"></div>
+        <div class="palette-more"><button class="ghost-btn" id="palette-more-btn" type="button" hidden>Load more</button></div>
+      </aside>
+
+      <!-- RIGHT: the board -->
+      <main class="pane board" id="board"></main>
+    </div>
+
+    <!-- About modal -->
+    <div class="modal-back" id="about-back" hidden>
+      <div class="modal about">
+        <button class="modal-x" id="about-x" type="button" aria-label="Close">×</button>
+        <h2>API Platform</h2>
+        <p>Every company runs on a <strong>stack of APIs</strong> — some you publish, most you consume. This tool lets you draw that stack: browse every provider indexed on <a href="https://apis.io" target="_blank" rel="noopener">APIs.io</a>, drag the ones you use onto the board, sort them into groupings that match how your enterprise is organized, and then — per provider — check off the exact <strong>operations</strong> and <strong>properties</strong> your teams actually use.</p>
+        <p>The output is one <a href="https://apisjson.org" target="_blank" rel="noopener">APIs.json</a> document (YAML, <code>type: platform</code>). Each provider carries a <strong>single merged OpenAPI</strong> of just the operations you selected, plus the supporting properties — documentation, plans, SDKs, and more — that an agent needs to actually use them. Hand that file to an AI and it has complete, honest context for the entire API surface your organization depends on.</p>
+        <p>Everything runs in your browser against the public <a href="https://apis.io/developer/" target="_blank" rel="noopener">APIs.io API</a> and the <a href="https://github.com/api-evangelist" target="_blank" rel="noopener">API Evangelist</a> OpenAPI repositories. Nothing leaves the page. Download your <code>apis.yml</code>, and upload it any time to keep editing.</p>
+        <p class="muted small">Part of the <a href="https://apicommons.org" target="_blank" rel="noopener">API Commons</a> tool suite.</p>
+      </div>
+    </div>
+
+    <!-- Provider detail drawer (operations + properties) -->
+    <div class="drawer-back" id="detail-back" hidden>
+      <div class="detail" id="detail">
+        <div class="detail-head">
+          <div>
+            <div class="detail-title" id="detail-title"></div>
+            <div class="detail-sub muted small" id="detail-sub"></div>
+          </div>
+          <div class="detail-actions">
+            <span class="detail-count muted small" id="detail-count"></span>
+            <button class="ghost-btn" id="detail-done" type="button">Done</button>
+            <button class="modal-x" id="detail-x" type="button" aria-label="Close">×</button>
+          </div>
+        </div>
+        <div class="detail-body" id="detail-body">
+          <div class="detail-cols">
+            <section class="detail-col">
+              <div class="detail-col-head">
+                <h4>Operations</h4>
+                <div class="detail-col-tools">
+                  <input type="search" id="op-filter" placeholder="Filter operations…" />
+                </div>
+              </div>
+              <div id="ops-list" class="ops-list"></div>
+            </section>
+            <section class="detail-col">
+              <div class="detail-col-head"><h4>Properties</h4></div>
+              <p class="muted small">Supporting artifacts to carry into the platform definition for this provider.</p>
+              <div id="props-list" class="props-list"></div>
+            </section>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="toast" class="toast" hidden></div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

@@ -1,0 +1,20 @@
+{
+  "name": "api-platform",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Define your company's API platform as an APIs.json (YAML, type: platform). Browse every provider on APIs.io, drag them into groups, pick the exact operations and properties you use across each API, and export a single platform definition — a merged OpenAPI per provider plus the properties agents need — to give AI complete context for the API stack your organization runs on.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "typescript": "^5.7.2",
+    "vite": "^5.4.11"
+  },
+  "dependencies": {
+    "yaml": "^2.6.1"
+  }
+}
