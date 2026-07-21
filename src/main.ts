@@ -444,12 +444,15 @@ async function renderApiOps(bodyWrap: HTMLElement, detail: ApiDetail) {
     const selectedHere = () => detailMember!.ops.filter((o) => o.specUrl === specUrl).length;
     allCb.checked = ops.length > 0 && selectedHere() === ops.length;
     allCb.addEventListener('change', () => {
+      // Row handlers resync allCb.checked mid-loop; capture the target first.
+      const want = allCb.checked;
       for (const cb of Array.from(box.querySelectorAll<HTMLInputElement>('.op-row:not(.op-all) input'))) {
-        if (cb.checked !== allCb.checked) {
-          cb.checked = allCb.checked;
+        if (cb.checked !== want) {
+          cb.checked = want;
           cb.dispatchEvent(new Event('change'));
         }
       }
+      allCb.checked = want;
     });
     allRow.appendChild(allCb);
     allRow.appendChild(el('span', 'op-all-label', `All ${ops.length} operations`));
