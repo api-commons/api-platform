@@ -59,6 +59,7 @@ button{font:inherit;cursor:pointer}
 .pcard:hover{background:var(--panel2);border-color:#4a4a4a}
 .pcard.on-board{opacity:.55}
 .pcard-img{width:26px;height:26px;border-radius:5px;object-fit:cover;background:#111;flex:0 0 auto}
+.icon-mono{display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.6rem;letter-spacing:.02em;object-fit:unset}
 .pcard-body{flex:1;min-width:0}
 .pcard-top{display:flex;align-items:center;gap:.4rem}
 .pcard-name{font-size:.86rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

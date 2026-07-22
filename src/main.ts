@@ -38,6 +38,38 @@ const state: PlatformState = {
 };
 
 const opKey = (o: { specUrl: string; method: string; path: string }) => `${o.specUrl}|${o.method}|${o.path}`;
+
+// ---------- Provider icon ----------
+// Always render something: the real image when it loads, otherwise a
+// deterministic initials monogram so no provider shows a blank tile.
+function hueFromString(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return h % 360;
+}
+function initialsOf(name: string): string {
+  const parts = (name || '?').trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return '?';
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+function providerIcon(name: string, image: string | undefined, cls: string): HTMLElement {
+  const mono = () => {
+    const d = el('div', `${cls} icon-mono`);
+    const hue = hueFromString(name || '');
+    d.style.background = `hsl(${hue} 40% 20%)`;
+    d.style.color = `hsl(${hue} 70% 72%)`;
+    d.textContent = initialsOf(name);
+    return d;
+  };
+  if (!image) return mono();
+  const img = el('img', cls) as HTMLImageElement;
+  img.src = image;
+  img.alt = '';
+  img.loading = 'lazy';
+  img.onerror = () => img.replaceWith(mono());
+  return img;
+}
 const propKey = (p: { type: string; url?: string }) => `${p.type}|${p.url || ''}`;
 
 // ---------- Toast ----------
@@ -96,11 +128,7 @@ function providerCardEl(p: ProviderCard): HTMLElement {
   const onBoard = state.members.some((m) => m.slug === p.slug);
   if (onBoard) card.classList.add('on-board');
 
-  const img = el('img', 'pcard-img') as HTMLImageElement;
-  img.src = p.image || '';
-  img.alt = '';
-  img.loading = 'lazy';
-  img.onerror = () => (img.style.visibility = 'hidden');
+  const icon = providerIcon(p.name, p.image, 'pcard-img');
 
   const body = el('div', 'pcard-body');
   const top = el('div', 'pcard-top');
@@ -123,7 +151,7 @@ function providerCardEl(p: ProviderCard): HTMLElement {
     addMember(p, 'general');
   });
 
-  card.appendChild(img);
+  card.appendChild(icon);
   card.appendChild(body);
   card.appendChild(add);
 
@@ -260,11 +288,7 @@ function memberChipEl(m: Member): HTMLElement {
   chip.draggable = true;
   chip.dataset.slug = m.slug;
 
-  const img = el('img', 'mchip-img') as HTMLImageElement;
-  img.src = m.image || '';
-  img.alt = '';
-  img.onerror = () => (img.style.visibility = 'hidden');
-  chip.appendChild(img);
+  chip.appendChild(providerIcon(m.name, m.image, 'mchip-img'));
 
   const body = el('div', 'mchip-body');
   body.appendChild(el('span', 'mchip-name', m.name));
