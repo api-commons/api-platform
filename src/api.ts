@@ -143,15 +143,41 @@ function parseSpec(text: string): any {
   return parseYaml(t);
 }
 
-// Resolve the OpenAPI body for a property: prefer inlined content, else fetch the url.
+// A parsed doc only counts as OpenAPI if it carries the version key or a paths
+// object. This guards against garbage like APIs.io's cached `content: "404: Not
+// Found"`, which YAML happily parses into `{404: "Not Found"}` — an object with
+// no `paths`, which would otherwise show up as a silent "0 operations".
+function looksLikeOpenApi(doc: any): boolean {
+  return !!doc && typeof doc === 'object' && (doc.openapi || doc.swagger || (doc.paths && typeof doc.paths === 'object'));
+}
+
+// Resolve the OpenAPI body for a property: prefer inlined content, else fetch the
+// url. Inlined content is only trusted when it actually parses to an OpenAPI doc;
+// otherwise we fall back to the url so a bad cache entry can't mask a live spec.
 export async function loadSpec(prop: ApiProperty): Promise<any> {
   const key = prop.url || prop.data || '';
   if (key && specCache.has(key)) return specCache.get(key);
   let doc: any;
+
   const body = prop.content ?? prop.data;
-  if (body) doc = parseSpec(body);
-  else if (prop.url) doc = parseSpec(await (await fetch(prop.url)).text());
-  else throw new Error('OpenAPI property has no content or url');
+  if (body) {
+    try {
+      const parsed = parseSpec(body);
+      if (looksLikeOpenApi(parsed)) doc = parsed;
+    } catch {
+      /* fall through to the url */
+    }
+  }
+
+  if (!doc && prop.url) {
+    const res = await fetch(prop.url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const parsed = parseSpec(await res.text());
+    if (!looksLikeOpenApi(parsed)) throw new Error('not an OpenAPI document');
+    doc = parsed;
+  }
+
+  if (!doc) throw new Error('no valid OpenAPI content or url');
   if (key) specCache.set(key, doc);
   return doc;
 }

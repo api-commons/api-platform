@@ -361,7 +361,7 @@ function renderApiList(apis: ApiSummary[]) {
     loadAll.disabled = true;
     loadAll.textContent = 'Loading…';
     for (const sec of Array.from(opsList.querySelectorAll<HTMLElement>('.api-sec[data-collapsed="1"]'))) {
-      await expandApi(sec);
+      await expandApi(sec, false);
     }
     loadAll.textContent = 'Expanded';
   });
@@ -394,16 +394,29 @@ function apiSectionEl(a: ApiSummary): HTMLElement {
   return sec;
 }
 
-async function expandApi(sec: HTMLElement) {
+function collapseSec(sec: HTMLElement) {
+  sec.dataset.collapsed = '1';
+  (sec.querySelector('.api-sec-body') as HTMLElement).hidden = true;
+  (sec.querySelector('.chev') as HTMLElement).textContent = '▸';
+}
+
+// `solo` (the default for a header click) closes every other open API so the
+// properties panel on the right always reflects just the API you're looking at.
+// The "Expand all" button passes solo=false to keep every section open.
+async function expandApi(sec: HTMLElement, solo = true) {
   const aid = sec.dataset.aid!;
   const bodyWrap = sec.querySelector('.api-sec-body') as HTMLElement;
   const chev = sec.querySelector('.chev') as HTMLElement;
   const collapsed = sec.dataset.collapsed === '1';
   if (!collapsed) {
-    sec.dataset.collapsed = '1';
-    bodyWrap.hidden = true;
-    chev.textContent = '▸';
+    collapseSec(sec);
+    rebuildProps();
     return;
+  }
+  if (solo) {
+    for (const other of Array.from($('#ops-list').querySelectorAll<HTMLElement>('.api-sec[data-collapsed="0"]'))) {
+      if (other !== sec) collapseSec(other);
+    }
   }
   sec.dataset.collapsed = '0';
   chev.textContent = '▾';
@@ -417,15 +430,30 @@ async function expandApi(sec: HTMLElement) {
         detail = await getApiDetail(aid);
         detailCache.set(aid, detail);
       }
-      collectProps(detail);
-      renderProps();
       await renderApiOps(bodyWrap, detail);
       bodyWrap.dataset.loaded = '1';
     } catch (e: any) {
       bodyWrap.innerHTML = `<div class="empty small">Failed to load: ${e.message}</div>`;
     }
   }
+  rebuildProps();
   applyOpFilter();
+}
+
+// Rebuild the aggregate properties panel from scratch: the provider's selected
+// properties (so they survive a collapse) plus whatever APIs are open right now.
+// Rebuilding — rather than only ever adding — is what stops properties from a
+// previously-viewed API piling up as you move between them.
+function rebuildProps() {
+  aggProps.clear();
+  if (detailMember) {
+    for (const p of detailMember.props) aggProps.set(propKey(p), { type: p.type, url: p.url, apiName: p.apiName });
+  }
+  for (const sec of Array.from($('#ops-list').querySelectorAll<HTMLElement>('.api-sec[data-collapsed="0"]'))) {
+    const detail = detailCache.get(sec.dataset.aid!);
+    if (detail) collectProps(detail);
+  }
+  renderProps();
 }
 
 function collectProps(detail: ApiDetail) {
@@ -457,6 +485,10 @@ async function renderApiOps(bodyWrap: HTMLElement, detail: ApiDetail) {
     }
     const ops = operationsOf(doc);
     box.innerHTML = '';
+    if (!ops.length) {
+      box.innerHTML = '<div class="empty small">This OpenAPI defines no operations.</div>';
+      continue;
+    }
     if (specs.length > 1) {
       const label = el('div', 'spec-label muted small', shortUrl(specUrl));
       box.appendChild(label);
